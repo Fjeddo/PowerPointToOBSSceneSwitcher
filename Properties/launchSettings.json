@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PowerPointToOBSSceneSwitcher": {
+      "commandName": "Project",
+      "commandLineArgs": "qwerty123"
+    }
+  }
+}

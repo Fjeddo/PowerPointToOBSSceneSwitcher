@@ -1,91 +1,164 @@
 ﻿using System;
 using System.IO;
-using System.Threading.Tasks;
 using Microsoft.Office.Interop.PowerPoint;
+
 //Thanks to CSharpFritz and EngstromJimmy for their gists, snippets, and thoughts.
 
 namespace PowerPointToOBSSceneSwitcher
 {
-    class Program
+    internal class Program
     {
-        private static Application ppt = new Microsoft.Office.Interop.PowerPoint.Application();
-        private static ObsLocal OBS;
-        static async Task Main(string[] args)
+        private const string SmallTab = "  ";
+
+        private const string Forward = "forward";
+        private const string Backwards = "backwards";
+
+        private static readonly Application Ppt = new();
+        private static readonly ObsLocal Obs = new();
+
+        private static bool _powerPointToObsBridgeOpen;
+
+        private static void Main(string[] args)
         {
-            Console.Write("Connecting to PowerPoint...");
-            ppt.SlideShowNextSlide += App_SlideShowNextSlide;
-            Console.WriteLine("connected");
+            ConnectToPowerPoint();
+            ConnectToObs(args[0]);
 
-            Console.Write("Connecting to OBS...");
-            OBS = new ObsLocal();
-            await OBS.Connect();
-            Console.WriteLine("connected");
+            _powerPointToObsBridgeOpen = true;
 
-            OBS.GetScenes();
+            Obs.GetScenes();
 
-            Console.ReadLine();
+            WaitForCommands();
         }
 
-
-        async static void App_SlideShowNextSlide(SlideShowWindow Wn)
+        private static void WaitForCommands()
         {
-            if (Wn != null)
+            while (true)
             {
-                Console.WriteLine($"Moved to Slide Number {Wn.View.Slide.SlideNumber}");
+                var keyInfo = Console.ReadKey();
+                if (keyInfo.Key == ConsoleKey.T)
+                {
+                    _powerPointToObsBridgeOpen = !_powerPointToObsBridgeOpen;
+
+                    Console.CursorLeft--;
+                    Console.WriteLine($"{SmallTab}---> Bridge is {(_powerPointToObsBridgeOpen ? "open" : "closed")}");
+                }
+
+                if (keyInfo.Key == ConsoleKey.RightArrow)
+                {
+                    SwitchSlide(Forward);
+                }
+
+                if (keyInfo.Key == ConsoleKey.LeftArrow)
+                {
+                    SwitchSlide(Backwards);
+                }
+
+                if (keyInfo.Key == ConsoleKey.Q && keyInfo.Modifiers == ConsoleModifiers.Shift)
+                {
+                    Console.CursorLeft--;
+                    Console.WriteLine("Exiting");
+                    return;
+                }
+            }
+        }
+
+        private static void SwitchSlide(string direction)
+        {
+            var from = $"Switching {direction} from {Ppt.ActivePresentation.SlideShowWindow.View.Slide.SlideNumber}";
+
+            Ppt.ActivePresentation.SlideShowWindow.Activate();
+            if (direction == Forward)
+            {
+                Ppt.ActivePresentation.SlideShowWindow.View.Next();
+            }
+            else
+            {
+                Ppt.ActivePresentation.SlideShowWindow.View.Previous();
+            }
+
+            Console.WriteLine($"{SmallTab}{from} to {Ppt.ActivePresentation.SlideShowWindow.View.Slide.SlideNumber}");
+        }
+
+        private static void ConnectToObs(string password)
+        {
+            Console.Write("Connecting to OBS...");
+            Obs.Connect(password);
+            Console.WriteLine("connected");
+        }
+
+        private static void ConnectToPowerPoint()
+        {
+            Console.Write("Connecting to PowerPoint...");
+            Ppt.SlideShowNextSlide += App_SlideShowNextSlide;
+            Console.WriteLine("connected");
+        }
+
+        private static void App_SlideShowNextSlide(SlideShowWindow slideShowWindow)
+        {
+            if (_powerPointToObsBridgeOpen && slideShowWindow != null)
+            {
+                Console.WriteLine($"Moved to Slide Number {slideShowWindow.View.Slide.SlideNumber}");
+
                 //Text starts at Index 2 ¯\_(ツ)_/¯
-                var note = String.Empty;
-                try { note = Wn.View.Slide.NotesPage.Shapes[2].TextFrame.TextRange.Text; }
-                catch { /*no notes*/ }
+                var note = string.Empty;
+                try
+                {
+                    note = slideShowWindow.View.Slide.NotesPage.Shapes[2].TextFrame.TextRange.Text;
+                }
+                catch(Exception exception)
+                {
+                     Console.WriteLine($"ERROR: {exception.Message}");
+                }
 
-                bool sceneHandled = false;
-
-
-                var notereader = new StringReader(note);
+                var sceneHandled = false;
+                
+                var noteReader = new StringReader(note);
                 string line;
-                while ((line = notereader.ReadLine()) != null)
+
+                while ((line = noteReader.ReadLine()) != null)
                 {
                     if (line.StartsWith("OBS:"))
                     {
-                        line = line.Substring(4).Trim();
+                        line = line[4..].Trim();
 
                         if (!sceneHandled)
                         {
-                            Console.WriteLine($"  Switching to OBS Scene named \"{line}\"");
+                            Console.WriteLine($"{SmallTab}Switching to OBS Scene named \"{line}\"");
                             try
                             {
-                                sceneHandled = OBS.ChangeScene(line);
+                                sceneHandled = Obs.ChangeScene(line);
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"  ERROR: {ex.Message.ToString()}");
+                                Console.WriteLine($"{SmallTab}ERROR: {ex.Message}");
                             }
                         }
                         else
                         {
-                            Console.WriteLine($"  WARNING: Multiple scene definitions found.  I used the first and have ignored \"{line}\"");
+                            Console.WriteLine($"{SmallTab}WARNING: Multiple scene definitions found.  I used the first and have ignored \"{line}\"");
                         }
                     }
 
                     if (line.StartsWith("OBSDEF:"))
                     {
-                        OBS.DefaultScene = line.Substring(7).Trim();
-                        Console.WriteLine($"  Setting the default OBS Scene to \"{OBS.DefaultScene}\"");
+                        Obs.DefaultScene = line[7..].Trim();
+                        Console.WriteLine($"{SmallTab}Setting the default OBS Scene to \"{Obs.DefaultScene}\"");
                     }
 
                     if (line.StartsWith("**START"))
                     {
-                        OBS.StartRecording();
+                        Obs.StartRecording();
                     }
 
                     if (line.StartsWith("**STOP"))
                     {
-                        OBS.StopRecording();
+                        Obs.StopRecording();
                     }
 
                     if (!sceneHandled)
                     {
-                        OBS.ChangeScene(OBS.DefaultScene);
-                        Console.WriteLine($"  Switching to OBS Default Scene named \"{OBS.DefaultScene}\"");
+                        Obs.ChangeScene(Obs.DefaultScene);
+                        Console.WriteLine($"{SmallTab}Switching to OBS Default Scene named \"{Obs.DefaultScene}\"");
                     }
                 }
             }

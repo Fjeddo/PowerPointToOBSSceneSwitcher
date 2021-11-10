@@ -1,36 +1,38 @@
-﻿using OBS.WebSocket.NET;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using OBS.WebSocket.NET;
 
 namespace PowerPointToOBSSceneSwitcher
 {
 
 	public class ObsLocal : IDisposable
 	{
-		private bool _DisposedValue;
-		private ObsWebSocket _OBS;
-		private List<string> validScenes;
-		private string defaultScene;
+		private bool _disposedValue;
 
-		public ObsLocal() { }
+		private ObsWebSocket _obs;
+		private List<string> _validScenes;
 
-		public Task Connect()
+		private string _defaultScene;
+
+        public ObsLocal()
+        {
+			_obs = new ObsWebSocket();
+		}
+
+        public void Connect(string password = "")
 		{
-			_OBS = new ObsWebSocket();
-			_OBS.Connect($"ws://127.0.0.1:4444", "");
-			return Task.CompletedTask;
+			_obs.Connect("ws://127.0.0.1:4444", password);
 		}
 
 		public string DefaultScene
         {
-            get { return defaultScene; }
-			set
+            get => _defaultScene;
+            set
 			{
-				if (validScenes.Contains(value))
+				if (_validScenes.Contains(value))
 				{
-					defaultScene = value;
+					_defaultScene = value;
 				}
                 else
                 {
@@ -41,74 +43,93 @@ namespace PowerPointToOBSSceneSwitcher
 
 		public bool ChangeScene(string scene)
         {
-			if (!validScenes.Contains(scene))
+			if (!_validScenes.Contains(scene))
 			{
                 Console.WriteLine($"Scene named {scene} does not exist");
-				if (String.IsNullOrEmpty(defaultScene))
+
+				if (string.IsNullOrEmpty(_defaultScene))
 				{
                     Console.WriteLine("No default scene has been set!");
+
 					return false;
 				}
 			
-				scene = defaultScene;
+				scene = _defaultScene;
 			}
 
-			_OBS.Api.SetCurrentScene(scene);
+			_obs.Api.SetCurrentScene(scene);
 
 			return true;
         }
 
 		public void GetScenes()
         {
-			var allScene = _OBS.Api.GetSceneList();
+			var allScene = _obs.Api.GetSceneList();
 			var list = allScene.Scenes.Select(s => s.Name).ToList();
-            Console.WriteLine("Valid Scenes:");
+            Console.WriteLine("┌───────────────────────────────────────");
+			Console.WriteLine("|  Valid Scenes:");
 			foreach(var l in list)
             {
-                Console.WriteLine(l);
+                Console.WriteLine($"|  {l}");
             }
-			validScenes = list;
+            Console.WriteLine("└───────────────────────────────────────");
+			_validScenes = list;
         }
 
 		public bool StartRecording()
 		{
-			try { _OBS.Api.StartRecording(); }
-			catch {  /* Recording already started */ }
+            try
+            {
+                _obs.Api.StartRecording();
+            }
+            catch(Exception exception)
+            {
+                  Console.WriteLine($"Start recording failed: {exception.Message}");
+            }
+
 			return true;
 		}
 
 		public bool StopRecording()
 		{
-			try { _OBS.Api.StopRecording(); }
-			catch {  /* Recording already stopped */ }
+            try
+            {
+                _obs.Api.StopRecording();
+            }
+			catch (Exception exception)
+			{
+				Console.WriteLine($"Stop recording failed: {exception.Message}");
+			}
+
 			return true;
 		}
 
 		protected virtual void Dispose(bool disposing)
 		{
-			if (!_DisposedValue)
+			if (!_disposedValue)
 			{
 				if (disposing)
 				{
 					// TODO: dispose managed state (managed objects)
 				}
 
-				_OBS.Disconnect();
-				_OBS = null;
-				_DisposedValue = true;
+				_obs.Disconnect();
+				_obs = null;
+
+				_disposedValue = true;
 			}
 		}
 
 		~ObsLocal()
 		{
 			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-			Dispose(disposing: false);
+			Dispose(false);
 		}
 
 		public void Dispose()
 		{
 			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-			Dispose(disposing: true);
+			Dispose(true);
 			GC.SuppressFinalize(this);
 		}
 	}
