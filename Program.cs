@@ -39,7 +39,7 @@ namespace PowerPointToOBSSceneSwitcher
                 {
                     _powerPointToObsBridgeOpen = !_powerPointToObsBridgeOpen;
 
-                    Console.CursorLeft--;
+                    System.Console.CursorLeft--;
                     Console.WriteLine($"{SmallTab}---> Bridge is {(_powerPointToObsBridgeOpen ? "open" : "closed")}");
                 }
 
@@ -64,31 +64,38 @@ namespace PowerPointToOBSSceneSwitcher
 
         private static void SwitchSlide(string direction)
         {
-            var from = $"Switching {direction} from {Ppt.ActivePresentation.SlideShowWindow.View.Slide.SlideNumber}";
-
-            Ppt.ActivePresentation.SlideShowWindow.Activate();
-            if (direction == Forward)
+            try
             {
-                Ppt.ActivePresentation.SlideShowWindow.View.Next();
-            }
-            else
-            {
-                Ppt.ActivePresentation.SlideShowWindow.View.Previous();
-            }
+                var from = $"Switching {direction} from {Ppt.ActivePresentation.SlideShowWindow.View.Slide.SlideNumber}";
 
-            Console.WriteLine($"{SmallTab}{from} to {Ppt.ActivePresentation.SlideShowWindow.View.Slide.SlideNumber}");
+                Ppt.ActivePresentation.SlideShowWindow.Activate();
+                if (direction == Forward)
+                {
+                    Ppt.ActivePresentation.SlideShowWindow.View.Next();
+                }
+                else
+                {
+                    Ppt.ActivePresentation.SlideShowWindow.View.Previous();
+                }
+
+                Console.WriteLine($"{SmallTab}{from} to {Ppt.ActivePresentation.SlideShowWindow.View.Slide.SlideNumber}");
+            }
+            catch (Exception e)
+            {
+                Console.Error(e, "Exception caught while switching slide");
+            }
         }
 
         private static void ConnectToObs(string password)
         {
-            Console.Write("Connecting to OBS...");
+            Console.Write("Connecting to OBS... ");
             Obs.Connect(password);
             Console.WriteLine("connected");
         }
 
         private static void ConnectToPowerPoint()
         {
-            Console.Write("Connecting to PowerPoint...");
+            Console.Write("Connecting to PowerPoint... ");
             Ppt.SlideShowNextSlide += App_SlideShowNextSlide;
             Console.WriteLine("connected");
         }
@@ -107,7 +114,7 @@ namespace PowerPointToOBSSceneSwitcher
                 }
                 catch(Exception exception)
                 {
-                     Console.WriteLine($"ERROR: {exception.Message}");
+                     Console.Error(exception, "ERROR");
                 }
 
                 var sceneHandled = false;
@@ -130,7 +137,7 @@ namespace PowerPointToOBSSceneSwitcher
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"{SmallTab}ERROR: {ex.Message}");
+                                Console.Error(ex, "ERROR");
                             }
                         }
                         else
