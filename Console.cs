@@ -17,6 +17,14 @@ internal static class Console
         System.Console.ForegroundColor = c;
     }
 
+    public static void Error(string text)
+    {
+        var c = System.Console.ForegroundColor;
+        System.Console.ForegroundColor = ConsoleColor.Red;
+
+        System.Console.ForegroundColor = c;
+    }
+
     public static void WriteLine(string text) => System.Console.WriteLine(text);
     public static void Write(string text) => System.Console.Write(text);
     public static ConsoleKeyInfo ReadKey() => System.Console.ReadKey();

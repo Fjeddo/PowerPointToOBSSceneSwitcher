@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.Office.Interop.PowerPoint;
 
@@ -27,37 +28,21 @@ namespace PowerPointToOBSSceneSwitcher
 
             Obs.GetScenes();
 
-            WaitForCommands();
+            WaitForCommandsV2();
         }
 
-        private static void WaitForCommands()
+        private static void WaitForCommandsV2()
         {
             while (true)
             {
                 var keyInfo = Console.ReadKey();
-                if (keyInfo.Key == ConsoleKey.T)
+                if(DefaultMappings.TryGetValue(new KeyInfo(keyInfo.Key, keyInfo.Modifiers), out var operation))
                 {
-                    _powerPointToObsBridgeOpen = !_powerPointToObsBridgeOpen;
+                    if (DefaultOpertions.TryGetValue(operation, out var action))
+                    {
+                        action(operation.StartsWith("OBS.") ? Obs : null);
+                    }
 
-                    System.Console.CursorLeft--;
-                    Console.WriteLine($"{SmallTab}---> Bridge is {(_powerPointToObsBridgeOpen ? "open" : "closed")}");
-                }
-
-                if (keyInfo.Key == ConsoleKey.RightArrow)
-                {
-                    SwitchSlide(Forward);
-                }
-
-                if (keyInfo.Key == ConsoleKey.LeftArrow)
-                {
-                    SwitchSlide(Backwards);
-                }
-
-                if (keyInfo.Key == ConsoleKey.Q && keyInfo.Modifiers == ConsoleModifiers.Shift)
-                {
-                    Console.CursorLeft--;
-                    Console.WriteLine("Exiting");
-                    return;
                 }
             }
         }
@@ -162,6 +147,11 @@ namespace PowerPointToOBSSceneSwitcher
                         Obs.StopRecording();
                     }
 
+                    if (line.StartsWith("**PAUSE"))
+                    {
+                        Obs.PauseRecording();
+                    }
+
                     if (!sceneHandled)
                     {
                         Obs.ChangeScene(Obs.DefaultScene);
@@ -171,5 +161,25 @@ namespace PowerPointToOBSSceneSwitcher
             }
         }
 
+        public static KeyMap DefaultMappings = new()
+        {
+            {new KeyInfo(ConsoleKey.F1), "OBS.ToggleRecording"},
+            {new KeyInfo(ConsoleKey.F1, ConsoleModifiers.Control), "OBS.StopRecording"},
+            {new KeyInfo(ConsoleKey.LeftArrow), "PPT.PreviousSlide"},
+            {new KeyInfo(ConsoleKey.RightArrow), "PPT.NextSlide" },
+        };
+
+        public static Operations DefaultOpertions = new()
+        {
+            {"OBS.ToggleRecording", obj => (obj as ObsLocal)?.StartPauseResumeRecording(true)},
+            {"OBS.StopRecording", obj => (obj as ObsLocal)?.StopRecording()},
+            { "PPT.PreviousSlide", _ => SwitchSlide(Backwards)},
+            { "PPT.NextSlide", _ => SwitchSlide(Forward)}
+        };
     }
+
+    public class KeyMap : Dictionary<KeyInfo, string> {}
+    public class Operations : Dictionary<string, Action<object>> {}
+
+    public record KeyInfo(ConsoleKey ConsoleKey, ConsoleModifiers Modifiers = 0);
 }

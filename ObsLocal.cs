@@ -5,8 +5,7 @@ using OBS.WebSocket.NET;
 
 namespace PowerPointToOBSSceneSwitcher
 {
-
-	public class ObsLocal : IDisposable
+    public class ObsLocal : IDisposable
 	{
 		private bool _disposedValue;
 
@@ -76,18 +75,22 @@ namespace PowerPointToOBSSceneSwitcher
 			_validScenes = list;
         }
 
-		public bool StartRecording()
+		public bool StartRecording(bool quietly = false)
 		{
             try
             {
                 _obs.Api.StartRecording();
             }
-            catch(Exception exception)
+            catch (Exception exception)
             {
-                  Console.WriteLine($"Start recording failed: {exception.Message}");
+                if (!quietly)
+                {
+                    Console.WriteLine($"Start recording failed: {exception.Message}");
+                }
+                return false;
             }
 
-			return true;
+            return true;
 		}
 
 		public bool StopRecording()
@@ -95,16 +98,78 @@ namespace PowerPointToOBSSceneSwitcher
             try
             {
                 _obs.Api.StopRecording();
+                Console.WriteLine("Stopped recording");
             }
-			catch (Exception exception)
+            catch (Exception exception)
 			{
 				Console.WriteLine($"Stop recording failed: {exception.Message}");
+                return false;
 			}
 
-			return true;
+            return true;
 		}
 
-		protected virtual void Dispose(bool disposing)
+        public bool PauseRecording(bool quietly = false)
+        {
+            try
+            {
+                _obs.Api.PauseRecording();
+            }
+            catch (Exception exception)
+            {
+                if (!quietly)
+                {
+                    Console.WriteLine($"Pause recording failed: {exception.Message}");
+                }
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool ResumeRecording(bool quietly = false)
+        {
+            try
+            {
+                _obs.Api.ResumeRecording();
+            }
+            catch (Exception exception)
+            {
+                if (!quietly)
+                {
+                    Console.WriteLine($"Resume recording failed: {exception.Message}");
+                }
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool StartPauseResumeRecording(bool quietly = false)
+        {
+            if (StartRecording(quietly))
+            {
+                Console.WriteLine("Started recording");
+                return true;
+            }
+
+            if (PauseRecording(quietly))
+            {
+                Console.WriteLine("Paused recording");
+                return true;
+            }
+
+            if (ResumeRecording(quietly))
+            {
+                Console.WriteLine("Resumed recording");
+                return true;
+            }
+
+            Console.Error("Tried to start, pause and resume recording, all failed");
+            return false;
+        }
+
+        protected virtual void Dispose(bool disposing)
 		{
 			if (!_disposedValue)
 			{
