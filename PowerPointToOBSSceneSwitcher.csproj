@@ -2,16 +2,9 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>netcoreapp3.1</TargetFramework>
+		<TargetFramework>net6.0</TargetFramework>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<LangVersion>latest</LangVersion>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<LangVersion>latest</LangVersion>
-	</PropertyGroup>
 	<ItemGroup>
 		<COMReference Include="Microsoft.Office.Interop.PowerPoint">
 			<Guid>{91493440-5a91-11cf-8700-00aa0060263b}</Guid>
@@ -25,8 +18,23 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="IsExternalInit.System.Runtime.CompilerServices" Version="1.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
 		<PackageReference Include="OBS.WebSocket.NET" Version="4.7.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="deck\buttonmatrix.html">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="deck\head.html">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="deck\manifest.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="deck\sw.js">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>

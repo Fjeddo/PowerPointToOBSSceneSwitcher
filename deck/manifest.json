@@ -1,0 +1,17 @@
+{
+  "name": "Fjeddo Streamdeck",
+  "short_name": "FJSDeck",
+  "description": "A software streamdeck",
+  "start_url": "/deck",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#fff",
+  "theme_color": "#fff",
+  "icons": [
+    {
+      "src": "https://upload.wikimedia.org/wikipedia/commons/6/6d/Windows_Settings_app_icon.png",
+      "sizes": "2295x2295",
+      "type": "image/png"
+    }
+  ]
+}

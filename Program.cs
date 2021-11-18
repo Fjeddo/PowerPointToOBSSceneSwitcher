@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Office.Interop.PowerPoint;
+using Newtonsoft.Json;
 
 //Thanks to CSharpFritz and EngstromJimmy for their gists, snippets, and thoughts.
 
@@ -21,14 +25,82 @@ namespace PowerPointToOBSSceneSwitcher
 
         private static void Main(string[] args)
         {
-            ConnectToPowerPoint();
+            //ConnectToPowerPoint();
             ConnectToObs(args[0]);
 
             _powerPointToObsBridgeOpen = true;
 
             Obs.GetScenes();
 
+            var builder = WebApplication.CreateBuilder(args);
+            var app = builder.Build();
+
+            app.MapGet("/", () => JsonConvert.SerializeObject(DefaultMappings, Formatting.Indented));
+            foreach (var mapping in DefaultMappings)
+            {
+                app.MapPost($"/op/{mapping.Value.Op}", () =>
+                {
+                    var op = DefaultOpertions[mapping.Value.Op];
+                    op(mapping.Value.Op.StartsWith("OBS.") ? Obs : null);
+                });
+            }
+
+            app.MapGet("/deck", async context =>
+            {
+                context.Response.ContentType = "text/html";
+                await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(GetDeckHtml()));
+            });
+
+            app.MapGet("/manifest.json", async context =>
+            {
+                context.Response.ContentType = "application/json";
+                await context.Response.Body.WriteAsync(File.ReadAllBytes("deck\\manifest.json"));
+            });
+
+            app.MapGet("/sw.js", async context =>
+            {
+                context.Response.ContentType = "application/javascript";
+                await context.Response.Body.WriteAsync(File.ReadAllBytes("deck\\sw.js"));
+            });
+
+            app.Run("http://0.0.0.0:5555");
+
             WaitForCommandsV2();
+        }
+
+        private static string GetDeckHtml()
+        {
+            var head = File.ReadAllText("deck\\head.html");
+            var body = new StringBuilder("<body>");
+
+            var buttonMatrix = File.ReadAllLines("deck\\buttonmatrix.html").ToList();
+
+            var buttonIdx = 0;
+
+            for (var i = 0; i < buttonMatrix.Count; i++)
+            {
+                if (!buttonMatrix[i].Contains($"<!--{buttonIdx}-->"))
+                {
+                    continue;
+                }
+
+                var mappingOp = DefaultMappings.Values.FirstOrDefault(x => x.Position == buttonIdx);
+                if (mappingOp != null)
+                {
+                    buttonMatrix[i] = buttonMatrix[i].Replace("#text#", mappingOp.Op).Replace("#imagesrc#", mappingOp.Op.StartsWith("OBS.") ? OBSImage : PPTImage).Replace("#op#", mappingOp.Op);
+                }
+                else
+                {
+                    buttonMatrix[i] = "<div style='display:inline-block;' class='opbtn'></div>";
+                }
+
+                buttonIdx++;
+            }
+            
+            body.Append(string.Join(Environment.NewLine, buttonMatrix));
+            body.Append("</body>");
+
+            return $"<!DOCTYPE html><html lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\">{head}{body}</html>";
         }
 
         private static void WaitForCommandsV2()
@@ -38,9 +110,9 @@ namespace PowerPointToOBSSceneSwitcher
                 var keyInfo = Console.ReadKey();
                 if(DefaultMappings.TryGetValue(new KeyInfo(keyInfo.Key, keyInfo.Modifiers), out var operation))
                 {
-                    if (DefaultOpertions.TryGetValue(operation, out var action))
+                    if (DefaultOpertions.TryGetValue(operation.Op, out var action))
                     {
-                        action(operation.StartsWith("OBS.") ? Obs : null);
+                        action(operation.Op.StartsWith("OBS.") ? Obs : null);
                     }
 
                 }
@@ -163,22 +235,28 @@ namespace PowerPointToOBSSceneSwitcher
 
         public static KeyMap DefaultMappings = new()
         {
-            {new KeyInfo(ConsoleKey.F1), "OBS.ToggleRecording"},
-            {new KeyInfo(ConsoleKey.F1, ConsoleModifiers.Control), "OBS.StopRecording"},
-            {new KeyInfo(ConsoleKey.LeftArrow), "PPT.PreviousSlide"},
-            {new KeyInfo(ConsoleKey.RightArrow), "PPT.NextSlide" },
+            {new KeyInfo(ConsoleKey.F1), new("OBS.ToggleRecording", 0)},
+            {new KeyInfo(ConsoleKey.F1, ConsoleModifiers.Control), new("OBS.StopRecording", 2)},
+            {new KeyInfo(ConsoleKey.LeftArrow), new("PPT.PreviousSlide", 4)},
+            {new KeyInfo(ConsoleKey.RightArrow), new("PPT.NextSlide", 8)},
         };
 
         public static Operations DefaultOpertions = new()
         {
             {"OBS.ToggleRecording", obj => (obj as ObsLocal)?.StartPauseResumeRecording(true)},
             {"OBS.StopRecording", obj => (obj as ObsLocal)?.StopRecording()},
-            { "PPT.PreviousSlide", _ => SwitchSlide(Backwards)},
-            { "PPT.NextSlide", _ => SwitchSlide(Forward)}
+            {"PPT.PreviousSlide", _ => SwitchSlide(Backwards)},
+            {"PPT.NextSlide", _ => SwitchSlide(Forward)}
         };
+
+        private const string OBSImage = "https://upload.wikimedia.org/wikipedia/commons/7/78/OBS.svg";
+        private const string PPTImage = "https://upload.wikimedia.org/wikipedia/commons/6/62/Microsoft_Office_PowerPoint_%282013%E2%80%932019%29.svg";
     }
 
-    public class KeyMap : Dictionary<KeyInfo, string> {}
+    public class KeyMap : Dictionary<KeyInfo, Operation> {}
+
+    public record Operation(string Op, int Position);
+
     public class Operations : Dictionary<string, Action<object>> {}
 
     public record KeyInfo(ConsoleKey ConsoleKey, ConsoleModifiers Modifiers = 0);
