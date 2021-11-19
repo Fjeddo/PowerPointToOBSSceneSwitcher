@@ -21,6 +21,8 @@ internal static class Console
     {
         var c = System.Console.ForegroundColor;
         System.Console.ForegroundColor = ConsoleColor.Red;
+        System.Console.WriteLine(text);
+        System.Console.WriteLine();
 
         System.Console.ForegroundColor = c;
     }

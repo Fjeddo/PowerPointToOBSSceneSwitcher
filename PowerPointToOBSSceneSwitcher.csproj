@@ -18,7 +18,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
+		<FrameworkReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
 		<PackageReference Include="OBS.WebSocket.NET" Version="4.7.2" />
 	</ItemGroup>
 

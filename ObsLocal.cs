@@ -48,9 +48,8 @@ namespace PowerPointToOBSSceneSwitcher
 
 				if (string.IsNullOrEmpty(_defaultScene))
 				{
-                    Console.WriteLine("No default scene has been set!");
-
-					return false;
+                    Console.Error("No default scene has been set!");
+                    return false;
 				}
 			
 				scene = _defaultScene;
@@ -85,8 +84,9 @@ namespace PowerPointToOBSSceneSwitcher
             {
                 if (!quietly)
                 {
-                    Console.WriteLine($"Start recording failed: {exception.Message}");
+                    Console.Error($"Start recording failed: {exception.Message}");
                 }
+
                 return false;
             }
 
@@ -102,7 +102,7 @@ namespace PowerPointToOBSSceneSwitcher
             }
             catch (Exception exception)
 			{
-				Console.WriteLine($"Stop recording failed: {exception.Message}");
+				Console.Error($"Stop recording failed: {exception.Message}");
                 return false;
 			}
 
@@ -119,8 +119,9 @@ namespace PowerPointToOBSSceneSwitcher
             {
                 if (!quietly)
                 {
-                    Console.WriteLine($"Pause recording failed: {exception.Message}");
+                    Console.Error($"Pause recording failed: {exception.Message}");
                 }
+
                 return false;
             }
 
@@ -139,6 +140,7 @@ namespace PowerPointToOBSSceneSwitcher
                 {
                     Console.WriteLine($"Resume recording failed: {exception.Message}");
                 }
+
                 return false;
             }
 

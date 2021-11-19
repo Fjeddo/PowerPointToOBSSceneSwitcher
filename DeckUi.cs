@@ -3,48 +3,66 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace PowerPointToOBSSceneSwitcher;
 
 public class DeckUi
 {
-    public void Start()
+    private static WebApplication _app;
+
+    public static void Start()
     {
         var builder = WebApplication.CreateBuilder();
-        var app = builder.Build();
+        builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
-        app.MapGet("/", () => JsonConvert.SerializeObject(Program.DefaultMappings, Formatting.Indented));
+        _app = builder.Build();
 
-        foreach (var mapping in Program.DefaultMappings)
+        _app.MapGet("/", () => JsonConvert.SerializeObject(Program.KeyMappings, Formatting.Indented));
+
+        MapOperations(_app);
+
+        _app.MapGet("/deck", GetDeck());
+        _app.MapGet("/manifest.json", GetManifest());
+        _app.MapGet("/sw.js", GetServiceWorker());
+
+        _app.RunAsync("http://0.0.0.0:5555");
+    }
+
+    private static void MapOperations(WebApplication app)
+    {
+        foreach (var mapping in Program.KeyMappings)
         {
             app.MapPost($"/op/{mapping.Value.Op}", () =>
             {
-                var op = Program.DefaultOpertions[mapping.Value.Op];
-                op(mapping.Value.Op.StartsWith("OBS.") ? Program.Obs : null);
+                var op = Program.DeckOperations[mapping.Value.Op];
+                op(mapping.Value.Op.StartsWith("OBS.") ? Program.Obs : Program.Ppt);
             });
         }
+    }
 
-        app.MapGet("/deck", async context =>
+    private static RequestDelegate GetServiceWorker() =>
+        async context =>
+        {
+            context.Response.ContentType = "application/javascript";
+            await context.Response.Body.WriteAsync(await File.ReadAllBytesAsync("deck\\sw.js"));
+        };
+
+    private static RequestDelegate GetManifest() =>
+        async context =>
+        {
+            context.Response.ContentType = "application/json";
+            await context.Response.Body.WriteAsync(await File.ReadAllBytesAsync("deck\\manifest.json"));
+        };
+
+    private static RequestDelegate GetDeck() =>
+        async context =>
         {
             context.Response.ContentType = "text/html";
             await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(GetDeckHtml()));
-        });
-
-        app.MapGet("/manifest.json", async context =>
-        {
-            context.Response.ContentType = "application/json";
-            await context.Response.Body.WriteAsync(File.ReadAllBytes("deck\\manifest.json"));
-        });
-
-        app.MapGet("/sw.js", async context =>
-        {
-            context.Response.ContentType = "application/javascript";
-            await context.Response.Body.WriteAsync(File.ReadAllBytes("deck\\sw.js"));
-        });
-
-        app.Run("http://0.0.0.0:5555");
-    }
+        };
 
     private static string GetDeckHtml()
     {
@@ -62,10 +80,10 @@ public class DeckUi
                 continue;
             }
 
-            var mappingOp = Program.DefaultMappings.Values.FirstOrDefault(x => x.Position == buttonIdx);
+            var mappingOp = Program.KeyMappings.Values.FirstOrDefault(x => x.Position == buttonIdx);
             if (mappingOp != null)
             {
-                buttonMatrix[i] = buttonMatrix[i].Replace("#text#", mappingOp.Op).Replace("#imagesrc#", mappingOp.Op.StartsWith("OBS.") ? Program.ObsImage : Program.PptImage).Replace("#op#", mappingOp.Op);
+                buttonMatrix[i] = buttonMatrix[i].Replace("#text#", mappingOp.Op).Replace("#imagesrc#", mappingOp.Op.StartsWith("OBS.") ? ObsImage : PptImage).Replace("#op#", mappingOp.Op);
             }
             else
             {
@@ -80,4 +98,7 @@ public class DeckUi
 
         return $"<!DOCTYPE html><html lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\">{head}{body}</html>";
     }
+
+    private const string ObsImage = "https://upload.wikimedia.org/wikipedia/commons/7/78/OBS.svg";
+    private const string PptImage = "https://upload.wikimedia.org/wikipedia/commons/6/62/Microsoft_Office_PowerPoint_%282013%E2%80%932019%29.svg";
 }

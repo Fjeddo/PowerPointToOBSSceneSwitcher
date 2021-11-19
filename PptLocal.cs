@@ -6,19 +6,17 @@ namespace PowerPointToOBSSceneSwitcher;
 
 internal class PptLocal
 {
-    private static readonly Application Ppt = new();
+    private readonly Application _ppt = new();
     private const string Forward = "forward";
+    public const string Backwards = "backwards";
 
-    public void Connect()
-    {
-        Console.Write("Connecting to PowerPoint... ");
-        Ppt.SlideShowNextSlide += App_SlideShowNextSlide;
-        Console.WriteLine("connected");
-    }
+    private bool _powerPointToObsBridgeOpen = true;
 
-    private static void App_SlideShowNextSlide(SlideShowWindow slideShowWindow)
+    public void Connect() => _ppt.SlideShowNextSlide += App_SlideShowNextSlide;
+
+    private void App_SlideShowNextSlide(SlideShowWindow slideShowWindow)
     {
-        if (Program.PowerPointToObsBridgeOpen && slideShowWindow != null)
+        if (_powerPointToObsBridgeOpen && slideShowWindow != null)
         {
             Console.WriteLine($"Moved to Slide Number {slideShowWindow.View.Slide.SlideNumber}");
 
@@ -92,23 +90,29 @@ internal class PptLocal
         }
     }
 
-    public void SwitchSlide(string direction)
+    public void ToggleBridge()
+    {
+        _powerPointToObsBridgeOpen = !_powerPointToObsBridgeOpen;
+        Console.WriteLine($"Ppt to Obs bridge is {(_powerPointToObsBridgeOpen ? "enabled" : "disabled")}");
+    }
+
+    public void SwitchSlide(string direction = Forward)
     {
         try
         {
-            var from = $"Switching {direction} from {Ppt.ActivePresentation.SlideShowWindow.View.Slide.SlideNumber}";
+            var from = $"Switching {direction} from {_ppt.ActivePresentation.SlideShowWindow.View.Slide.SlideNumber}";
 
-            Ppt.ActivePresentation.SlideShowWindow.Activate();
+            _ppt.ActivePresentation.SlideShowWindow.Activate();
             if (direction == Forward)
             {
-                Ppt.ActivePresentation.SlideShowWindow.View.Next();
+                _ppt.ActivePresentation.SlideShowWindow.View.Next();
             }
             else
             {
-                Ppt.ActivePresentation.SlideShowWindow.View.Previous();
+                _ppt.ActivePresentation.SlideShowWindow.View.Previous();
             }
 
-            Console.WriteLine($"{from} to {Ppt.ActivePresentation.SlideShowWindow.View.Slide.SlideNumber}");
+            Console.WriteLine($"{from} to {_ppt.ActivePresentation.SlideShowWindow.View.Slide.SlideNumber}");
         }
         catch (Exception e)
         {
