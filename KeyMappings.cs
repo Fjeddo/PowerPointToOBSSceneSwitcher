@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace PowerPointToOBSSceneSwitcher;
 
-public class KeyMap : Dictionary<KeyInfo, Operation>
+public class KeyMappings : Dictionary<KeyInfo, Operation>
 {
-    public KeyMap()
+    public KeyMappings()
     {
         Add(new KeyInfo(ConsoleKey.F1), new("OBS.ToggleRecording", 0));
         Add(new KeyInfo(ConsoleKey.F1, ConsoleModifiers.Control), new("OBS.StopRecording", 1));

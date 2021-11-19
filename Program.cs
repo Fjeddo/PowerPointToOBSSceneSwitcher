@@ -50,7 +50,7 @@ namespace PowerPointToOBSSceneSwitcher
             Console.WriteLine("connected");
         }
 
-        internal static KeyMap KeyMappings = new();
+        internal static KeyMappings KeyMappings = new();
         internal static DeckOperations DeckOperations = new();
     }
 }
