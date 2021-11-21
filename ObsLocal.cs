@@ -56,8 +56,9 @@ namespace PowerPointToOBSSceneSwitcher
 			}
 
 			_obs.Api.SetCurrentScene(scene);
+            Console.WriteLine($"Switched to scene {scene}");
 
-			return true;
+            return true;
         }
 
 		public void GetScenes()

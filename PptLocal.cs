@@ -4,10 +4,10 @@ using Microsoft.Office.Interop.PowerPoint;
 
 namespace PowerPointToOBSSceneSwitcher;
 
-internal class PptLocal
+public class PptLocal
 {
     private readonly Application _ppt = new();
-    private const string Forward = "forward";
+    public const string Forward = "forward";
     public const string Backwards = "backwards";
 
     private bool _powerPointToObsBridgeOpen = true;
@@ -47,7 +47,7 @@ internal class PptLocal
                         Console.WriteLine($"Switching to OBS Scene named \"{line}\"");
                         try
                         {
-                            sceneHandled = Program.Obs.ChangeScene(line);
+                            sceneHandled = Program.DeckOperations["OBS.SwitchScene"](DeckOperations.ToDeckOperationParameters($"scene={line}"));
                         }
                         catch (Exception ex)
                         {
@@ -60,43 +60,45 @@ internal class PptLocal
                     }
                 }
 
-                if (line.StartsWith("OBSDEF:"))
-                {
-                    Program.Obs.DefaultScene = line[7..].Trim();
-                    Console.WriteLine($"Setting the default OBS Scene to \"{Program.Obs.DefaultScene}\"");
-                }
+                //if (line.StartsWith("OBSDEF:"))
+                //{
+                //    Program.Obs.DefaultScene = line[7..].Trim();
+                //    Console.WriteLine($"Setting the default OBS Scene to \"{Program.Obs.DefaultScene}\"");
+                //}
 
                 if (line.StartsWith("**START"))
                 {
-                    Program.Obs.StartRecording();
+                    Program.DeckOperations["OBS.StartRecording"](null);
                 }
 
                 if (line.StartsWith("**STOP"))
                 {
-                    Program.Obs.StopRecording();
+                    Program.DeckOperations["OBS.StopRecording"](null);
                 }
 
                 if (line.StartsWith("**PAUSE"))
                 {
-                    Program.Obs.PauseRecording();
+                    Program.DeckOperations["OBS.PauseRecording"](null);
                 }
 
-                if (!sceneHandled)
-                {
-                    Program.Obs.ChangeScene(Program.Obs.DefaultScene);
-                    Console.WriteLine($"Switching to OBS Default Scene named \"{Program.Obs.DefaultScene}\"");
-                }
+                //if (!sceneHandled)
+                //{
+                //    Program.Obs.ChangeScene(Program.Obs.DefaultScene);
+                //    Console.WriteLine($"Switching to OBS Default Scene named \"{Program.Obs.DefaultScene}\"");
+                //}
             }
         }
     }
 
-    public void ToggleBridge()
+    public bool ToggleBridge()
     {
         _powerPointToObsBridgeOpen = !_powerPointToObsBridgeOpen;
         Console.WriteLine($"Ppt to Obs bridge is {(_powerPointToObsBridgeOpen ? "enabled" : "disabled")}");
+
+        return true;
     }
 
-    public void SwitchSlide(string direction = Forward)
+    public bool SwitchSlide(string direction = Forward)
     {
         try
         {
@@ -113,10 +115,14 @@ internal class PptLocal
             }
 
             Console.WriteLine($"{from} to {_ppt.ActivePresentation.SlideShowWindow.View.Slide.SlideNumber}");
+
+            return true;
         }
         catch (Exception e)
         {
             Console.Error(e, "Exception caught while switching slide");
         }
+
+        return false;
     }
 }

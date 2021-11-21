@@ -1,0 +1,3 @@
+﻿OBS.SwitchScene,scene=Iz swipe
+FJSD.Delay,ms=2900
+OBS.SwitchScene,scene=Fullscreen camera

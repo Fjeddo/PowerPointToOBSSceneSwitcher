@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -35,10 +36,12 @@ public class DeckUi
     {
         foreach (var mapping in Program.KeyMappings)
         {
-            app.MapPost($"/op/{mapping.Value.Op}", () =>
+            app.MapPost($"/op/{mapping.Value.Op}", context =>
             {
                 var op = Program.DeckOperations[mapping.Value.Op];
-                op(mapping.Value.Op.StartsWith("OBS.") ? Program.Obs : Program.Ppt);
+                op(context.Request.Query.ToDictionary(s => s.Key, s => s.Value.ToString()));
+
+                return Task.CompletedTask;
             });
         }
     }
@@ -80,10 +83,10 @@ public class DeckUi
                 continue;
             }
 
-            var mappingOp = Program.KeyMappings.Values.FirstOrDefault(x => x.Position == buttonIdx);
+            var mappingOp = DeckUiOperations.FirstOrDefault(x => x.Position == buttonIdx);
             if (mappingOp != null)
             {
-                buttonMatrix[i] = buttonMatrix[i].Replace("#text#", mappingOp.Op).Replace("#imagesrc#", mappingOp.Op.StartsWith("OBS.") ? ObsImage : PptImage).Replace("#op#", mappingOp.Op);
+                buttonMatrix[i] = buttonMatrix[i].Replace("#text#", mappingOp.Op).Replace("#imagesrc#", GetImageSrc(mappingOp)).Replace("#op#", $"{mappingOp.Op}?{string.Join('&', mappingOp.Parameters)}");
             }
             else
             {
@@ -99,6 +102,30 @@ public class DeckUi
         return $"<!DOCTYPE html><html lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\">{head}{body}</html>";
     }
 
+    private static string GetImageSrc(DeckUiOperation mappingOp) =>
+        mappingOp.Op.Split('.').First() switch
+        {
+            "OBS" => ObsImage,
+            "PPT" => PptImage,
+            _ => FjsdImage
+        };
+
     private const string ObsImage = "https://upload.wikimedia.org/wikipedia/commons/7/78/OBS.svg";
     private const string PptImage = "https://upload.wikimedia.org/wikipedia/commons/6/62/Microsoft_Office_PowerPoint_%282013%E2%80%932019%29.svg";
+    private const string FjsdImage = "https://upload.wikimedia.org/wikipedia/commons/6/6d/Windows_Settings_app_icon.png";
+
+    private static readonly DeckUiOperation[] DeckUiOperations =
+    {
+        new(0, "OBS.ToggleRecording"),
+        new(1, "OBS.StopRecording"),
+        new(2, "OBS.SwitchScene", "scene=Laptop screen ppt slideshow w camera left"),
+        new(3, "PPT.NextSlide"),
+        new(4, "PPT.PreviousSlide"),
+        new(5, "PPT.ToggleBridge"),
+        new(6, "FJSD.Sequence", "seq=swipe.seq"),
+        //new DeckUiOperation(7, ""),
+        //new DeckUiOperation(8, ""),
+    };
 }
+
+public record DeckUiOperation(int Position, string Op, params string[] Parameters) : Operation(Op, Parameters);
