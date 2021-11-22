@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using OBS.WebSocket.NET;
+﻿using OBS.WebSocket.NET;
 
 namespace PowerPointToOBSSceneSwitcher
 {
@@ -38,6 +35,21 @@ namespace PowerPointToOBSSceneSwitcher
                     Console.WriteLine($"Scene named {value} does not exist and cannot be set as default");
                 }
 			}
+        }
+
+        public bool RenderSource(string sourceName, bool render)
+        {
+            var source = _obs.Api.GetCurrentScene().Items.Find(x => x.SourceName == sourceName);
+            if (source == default)
+            {
+                Console.WriteLine($"Source named {sourceName} does not exist");
+                return false;
+            }
+
+            _obs.Api.SetSourceRender(sourceName, render);
+            Console.WriteLine($"Source named {sourceName} render={render}");
+
+            return true;
         }
 
 		public bool ChangeScene(string scene)

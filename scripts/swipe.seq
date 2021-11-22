@@ -1,3 +1,4 @@
-﻿OBS.SwitchScene,scene=Iz swipe
-FJSD.Delay,ms=2900
-OBS.SwitchScene,scene=Fullscreen camera
+﻿OBS.SwitchScene,scene=Iz swipe 2
+OBS.RenderSource,sourceName=Camera,render=false
+FJSD.Delay,ms=1000
+OBS.RenderSource,sourceName=Camera,render=true

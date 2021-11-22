@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using Microsoft.Office.Interop.PowerPoint;
+﻿using Microsoft.Office.Interop.PowerPoint;
 
 namespace PowerPointToOBSSceneSwitcher;
 

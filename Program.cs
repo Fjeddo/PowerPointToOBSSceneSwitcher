@@ -2,9 +2,6 @@
 //Thanks to CSharpFritz and EngstromJimmy for their gists, snippets, and thoughts.
 //
 
-using System;
-using System.Collections.Generic;
-
 namespace PowerPointToOBSSceneSwitcher;
 
 internal class Program
@@ -63,11 +60,11 @@ public class KeyMappings : Dictionary<KeyInfo, Operation>
     {
         Add(new KeyInfo(ConsoleKey.F1), new("OBS.ToggleRecording"));
         Add(new KeyInfo(ConsoleKey.F1, ConsoleModifiers.Control), new("OBS.StopRecording"));
-        Add(new KeyInfo(ConsoleKey.F2), new("OBS.SwitchScene", "scene=Secondary screen"));
+        Add(new KeyInfo(ConsoleKey.F2), new("OBS.SwitchScene", "scene=Iz swipe 2"));
         Add(new KeyInfo(ConsoleKey.LeftArrow), new("PPT.PreviousSlide"));
         Add(new KeyInfo(ConsoleKey.RightArrow), new("PPT.NextSlide"));
         Add(new KeyInfo(ConsoleKey.T, ConsoleModifiers.Control), new("PPT.ToggleBridge"));
-        Add(new KeyInfo(ConsoleKey.F12), new("FJSD.Sequence", "seq=swipe.seq"));
+        Add(new KeyInfo(ConsoleKey.F12), new("FJSD.Sequence", "seq=scripts\\swipe.seq"));
     }
 }
 
