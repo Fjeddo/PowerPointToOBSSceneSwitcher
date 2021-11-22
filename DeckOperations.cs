@@ -46,7 +46,7 @@ public class DeckOperations : Dictionary<string, Func<Dictionary<string, string>
 
     private bool FjsdSequence(string seq)
     {
-        var actions = File.ReadAllLines(seq).Select(op =>
+        var actions = File.ReadAllLines($"sequences\\{seq}").Select(op =>
         {
             var opParts = op.Split(',');
             

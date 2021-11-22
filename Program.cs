@@ -64,7 +64,7 @@ public class KeyMappings : Dictionary<KeyInfo, Operation>
         Add(new KeyInfo(ConsoleKey.LeftArrow), new("PPT.PreviousSlide"));
         Add(new KeyInfo(ConsoleKey.RightArrow), new("PPT.NextSlide"));
         Add(new KeyInfo(ConsoleKey.T, ConsoleModifiers.Control), new("PPT.ToggleBridge"));
-        Add(new KeyInfo(ConsoleKey.F12), new("FJSD.Sequence", "seq=scripts\\swipe.seq"));
+        Add(new KeyInfo(ConsoleKey.F12), new("FJSD.Sequence", "seq=swipe.seq"));
     }
 }
 

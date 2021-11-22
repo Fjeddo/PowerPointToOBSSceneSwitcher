@@ -36,7 +36,7 @@
 	  <None Update="deck\sw.js">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="scripts\swipe.seq">
+	  <None Update="sequences\swipe.seq">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>
