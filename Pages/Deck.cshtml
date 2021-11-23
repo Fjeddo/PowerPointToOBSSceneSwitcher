@@ -1,0 +1,74 @@
+﻿@page
+@model DeckModel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>Fjeddo Stream Deck</title>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        };
+    </script>
+    <script>
+        async function performOp(op) {
+            await window.fetch('/op/' + op, { method: 'POST' });
+        }
+    </script>
+    <style type="text/css">
+        body {
+            background: #000;
+        }
+
+        .matrix {
+            position: absolute;
+            top: 10px;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+        }
+
+            .matrix > div {
+                height: 32%;
+                padding: 2px;
+            }
+
+        .opbtn {
+            width: 33%;
+            height: 100%;
+            vertical-align: middle;
+            border-radius: 4px;
+        }
+
+        button.opbtn:active {
+            background: dimgrey;
+        }
+
+        .opimg {
+            height: 40%;
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix">
+        @for (var i = 0; i < 9; i++)
+        {
+            @Html.Raw(i % 3 == 0 ? "<div>" : "")
+
+            var uiOp = DeckModel.DeckUiOperations.FirstOrDefault(x => x.Position == i);
+            if (uiOp != null)
+            {
+                var op = $"{uiOp.Op}?{string.Join('&', uiOp.Parameters)}";
+                <button data-pos="@uiOp.Position" class="opbtn" onclick="javascript:performOp('@op')">@uiOp.Op<br /><img class="opimg" src="@DeckModel.GetImageSrc(uiOp)" /></button>
+            }
+            else
+            {
+                <div data-pos="@i" style='display:inline-block;' class='opbtn'></div>
+            }
+
+            @Html.Raw(i % 3 == 2 ? "</div>" : "")
+        }
+    </div>
+</body>
+</html>
