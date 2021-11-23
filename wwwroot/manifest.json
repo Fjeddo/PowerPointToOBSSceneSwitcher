@@ -2,6 +2,7 @@
   "name": "Fjeddo Streamdeck",
   "short_name": "FJSDeck",
   "description": "A software streamdeck",
+  "id": "/deck",
   "start_url": "/deck",
   "display": "fullscreen",
   "orientation": "any",
